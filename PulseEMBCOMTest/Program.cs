@@ -24,7 +24,6 @@ namespace PulseEMBCOMTest
         {
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
-            PulseIDPool = new ApplicationPool();
             PulseID = PulseIDPool.Allocate();
             stopWatch.Stop();
             TimeSpan ts = stopWatch.Elapsed;
@@ -60,7 +59,7 @@ namespace PulseEMBCOMTest
             {
                 IElement element1 = myDesign.Elements.Item[0];
                 element1.ReplaceText("PULSE TEST");
-              // System.Runtime.InteropServices.Marshal.ReleaseComObject(element1);
+               System.Runtime.InteropServices.Marshal.ReleaseComObject(element1);
 
             }
            
@@ -108,34 +107,40 @@ namespace PulseEMBCOMTest
 
         static void Main(string[] args)
         {
+            PulseIDPool = new ApplicationPool();
+            IApplication PulseID1 = PulseIDPool.Allocate();
             string[] fileList = Directory.GetFiles(args[0], "*.PXF");
             var csv = new StringBuilder();
             var headerLine = string.Format("{0},{1},{2},{3},{4},{5}","Design Name", "Create App", "Open Template", "Change Text", "Render Template", "Save Template");
             csv.AppendLine(headerLine);
-            string createAppTime = CreateApplication();
-            string version = PulseID.Version;
+            
+            string version = PulseID1.Version;
             foreach (string file in fileList)
             {
 
-               
+                Console.WriteLine(file);
+                string createAppTime = CreateApplication();
                 string openTime = OpenTemplate(file);
                 string changeElementTime = SetText();
                 string imageFile = Path.Combine(args[1], Path.GetFileNameWithoutExtension(file)+".PNG");
-                Console.WriteLine(imageFile);
+      
                 string outputFile = Path.Combine(args[1], Path.GetFileNameWithoutExtension(file)+".PXF");
+                Console.WriteLine("Output: " + outputFile);
                 string renderTime = RenderTemplate(imageFile);
                 string saveTemplateTime = SaveTemplate(outputFile);
                 var newLine = string.Format("{0},{1},{2},{3},{4},{5}", Path.GetFileName(file), createAppTime, openTime, changeElementTime, renderTime, saveTemplateTime);
                 csv.AppendLine(newLine);
-                version = PulseID.Version;
+              
               System.Runtime.InteropServices.Marshal.ReleaseComObject(myImage);
               System.Runtime.InteropServices.Marshal.ReleaseComObject(myDesign);
+              PulseIDPool.Release(PulseID);
           
            
 
             }
 
-            // System.Runtime.InteropServices.Marshal.ReleaseComObject(PulseID);
+             System.Runtime.InteropServices.Marshal.ReleaseComObject(PulseID);
+            PulseIDPool.Release(PulseID1);
             Console.WriteLine(args[1]);
             File.WriteAllText(Path.Combine(args[1],"Timelog-"+version+".csv"), csv.ToString());
 
